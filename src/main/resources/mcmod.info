@@ -1,8 +1,8 @@
 [
 {
-  "modid": "dangerousmagma",
-  "name": "Dangerous Magma",
-  "description": "You know how you can sneak on magma blocks to avoid damage? Well, you can't do that anymore.",
+  "modid": "burninator",
+  "name": "Burninator",
+  "description": "Specify more blocks like magma blocks, that burn you when you walk on them D:",
   "version": "${version}",
   "mcversion": "${mcversion}",
   "authorList": ["quaternary"],
