@@ -1,0 +1,11 @@
+[
+{
+  "modid": "dangerousmagma",
+  "name": "Dangerous Magma",
+  "description": "You know how you can sneak on magma blocks to avoid damage? Well, you can't do that anymore.",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "authorList": ["quaternary"],
+  "credits": "Made for carstorm lol"
+}
+]
