@@ -3,10 +3,11 @@ package quaternary.burninator;
 import net.minecraft.block.Block;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityList;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.Blocks;
 import net.minecraft.util.DamageSource;
+import net.minecraft.util.IStringSerializable;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
@@ -18,6 +19,8 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
+import net.minecraftforge.fml.common.registry.EntityEntry;
+import net.minecraftforge.fml.common.registry.EntityRegistry;
 import net.minecraftforge.fml.common.registry.ForgeRegistries;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -27,6 +30,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 @Mod(modid = Burninator.MODID, name = Burninator.NAME, version = Burninator.VERSION)
@@ -40,9 +44,15 @@ public class Burninator {
 	private static Set<Block> hotBlocks = new HashSet<>();
 	private static Set<Block> semiHotBlocks = new HashSet<>();
 	
+	private static Set<ResourceLocation> entityIds = new HashSet<>();
+	private static EnumListMode entityMode = EnumListMode.IGNORED;
+	
+	private static ResourceLocation FAKE_PLAYER_RESOURCELOCATION = new ResourceLocation("minecraft", "player");
+	private static ResourceLocation UNKNOWN_RESOURCELOCATION = new ResourceLocation(MODID, "unknown");
+	
 	@Mod.EventHandler
 	public static void postinit(FMLPostInitializationEvent e) {
-		updateBlockLists();
+		readConfig();
 	}
 	
 	@SubscribeEvent
@@ -60,7 +70,11 @@ public class Burninator {
 			ent.isEntityAlive() &&
 			!ent.isRiding() &&
 			!ent.isImmuneToFire() &&
-			!EnchantmentHelper.hasFrostWalkerEnchantment(ent)
+			!EnchantmentHelper.hasFrostWalkerEnchantment(ent) &&
+			(
+				entityMode == EnumListMode.IGNORED ||
+				((entityMode == EnumListMode.WHITELIST) == entityIds.contains(getEntityResloc(ent)))
+			)
 		).iterator();
 		
 		while(enterator.hasNext()) {
@@ -90,6 +104,18 @@ public class Burninator {
 		world.profiler.endSection();
 	}
 	
+	private static ResourceLocation getEntityResloc(Entity ent) {
+		//Guess who doesn't *actually* have an entity id
+		if(ent instanceof EntityPlayer) {
+			return FAKE_PLAYER_RESOURCELOCATION;
+		} else {
+			EntityEntry yeet = EntityRegistry.getEntry(ent.getClass());
+			return yeet == null ? UNKNOWN_RESOURCELOCATION : yeet.getRegistryName();
+		}
+	}
+	
+	////////////////////////////////////////////////////////////////////////////////////
+	
 	@Config(modid = MODID)
 	public static class ModConfig {
 		@Config.Name("Hot Blocks")
@@ -101,24 +127,50 @@ public class Burninator {
 		@Config.Name("Semi Hot Blocks")
 		@Config.Comment("Blocks that burn entities that touch them (when they are not sneaking). Like magma blocks in vanilla.")
 		public static String[] semiHotBlocks = new String[0];
+		
+		@Config.Name("Entity List")
+		@Config.Comment({
+			"A list of entity IDs, like 'minecraft:horse' (as in /summon).",
+			"Players are 'minecraft:player'.",
+			"Also see 'Entity List Mode' for how to make this list actually have an effect on the game!"
+		})
+		public static String[] entityList = new String[0];
+		
+		@Config.Name("Entity List Mode")
+		@Config.Comment({
+			"How the game will handle the entity list.",
+			"IGNORED: All entities will burn.",
+			"WHITELIST: Only selected entities will burn on the blocks you choose.",
+			"BLACKLIST: All entities except the selected entities will burn on the blocks you choose."
+		})
+		public static EnumListMode listMode = EnumListMode.IGNORED;
 	}
 	
 	@SubscribeEvent
 	public static void configChanged(ConfigChangedEvent.OnConfigChangedEvent e) {
 		if(e.getModID().equals(MODID)) {
 			ConfigManager.sync(MODID, Config.Type.INSTANCE);
-			updateBlockLists();
+			readConfig();
 		}
 	}
 	
-	private static void updateBlockLists() {
-		hotBlocks.clear();
-		semiHotBlocks.clear();
-		
+	private static void readConfig() {
 		blah(hotBlocks, ModConfig.hotBlocks);
 		blah(semiHotBlocks, ModConfig.semiHotBlocks);
-		
 		semiHotBlocks.addAll(hotBlocks);
+		
+		entityIds.clear();
+		
+		for(String s : ModConfig.entityList) {
+			ResourceLocation res = new ResourceLocation(s);
+			if(FAKE_PLAYER_RESOURCELOCATION.equals(res) || ForgeRegistries.ENTITIES.containsKey(res)) {
+				entityIds.add(res);
+			} else {
+				LOGGER.warn("No entity found with the name '{}', skipping", s);
+			}
+		}
+		
+		entityMode = ModConfig.listMode;
 	}
 	
 	private static void blah(Collection<Block> blockList, String[] resourceStrings) {
@@ -132,5 +184,12 @@ public class Burninator {
 				LOGGER.warn("No block found with the name '{}', skipping", s);
 			}
 		}
+	}
+	
+	public enum EnumListMode {
+		IGNORED,
+		WHITELIST,
+		@SuppressWarnings("unused")
+		BLACKLIST
 	}
 }
