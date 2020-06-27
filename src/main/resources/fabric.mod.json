@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "id": "burninator",
+  "version": "${version}",
+
+  "name": "Burninator",
+  "description": "Make blocks HOT",
+  "authors": [
+    "quaternary"
+  ],
+  "contact": {
+    "homepage": "https://highlysuspect.agency/",
+    "sources": "https://github.com/quat1024/burninator"
+  },
+
+  "license": "LGPL-3.0-or-later",
+  "icon": "assets/burninator/icon.png",
+
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "agency.highlysuspect.burninator.Init"
+    ]
+  },
+  "mixins": [
+    "modid.mixins.json"
+  ],
+
+  "depends": {
+    "fabricloader": ">=0.7.4",
+    "fabric": "*",
+    "minecraft": "1.16.x"
+  }
+}
