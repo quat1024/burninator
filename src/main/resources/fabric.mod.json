@@ -23,7 +23,7 @@
     ]
   },
   "mixins": [
-    "modid.mixins.json"
+    "burninator.mixins.json"
   ],
 
   "depends": {
