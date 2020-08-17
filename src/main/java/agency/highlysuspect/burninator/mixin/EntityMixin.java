@@ -44,7 +44,7 @@ public class EntityMixin {
 		LivingEntity living = (LivingEntity) thi$;
 		if(living.isFireImmune() || EnchantmentHelper.hasFrostWalker(living)) return;
 		
-		if(state.isIn(Init.VERY_HOT) || (living.isSneaking() && state.isIn(Init.HOT)) || (!living.isSneaking() && state.isIn(Init.REVERSE_HOT))) {
+		if(state.isIn(Init.VERY_HOT) || (!living.isSneaking() && state.isIn(Init.HOT)) || (living.isSneaking() && state.isIn(Init.REVERSE_HOT))) {
 			living.damage(DamageSource.HOT_FLOOR, 1);
 		}
 	}
